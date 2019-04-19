@@ -129,8 +129,6 @@ router.get('/current', passport.authenticate('jwt', {session: false}), (req, res
   };
 
   res.json(userProfile);
-  console.log('//////////////////////////////////////////////');
-  console.log(userProfile);
 });
 
 module.exports = router;
