@@ -98,16 +98,6 @@ router.put('/edit/:id', passport.authenticate('jwt', {session: false}), (req, re
         return res.status(401).json({notauthorized: 'User not authorized'});
       } else{
       // Update
-      console.log('foundPost.user = ' + foundPost.user + ' /req.user.id = ' + req.user.id);
-      console.log('////////////////');
-      console.log('req.params.id = ' + req.params.id);
-      console.log('////////////////');
-      console.log('foundPost.id = ' + foundPost._id);
-      console.log('////////////////');
-      console.log('foundPost.name = ' + foundPost.name);
-      console.log('////////////////');
-      console.log('Found post = ' + foundPost);
-      Post.findById(req.params.id)
       
         Post.findOneAndUpdate(
           {_id :req.params.id},
@@ -139,6 +129,54 @@ router.delete('/:id', passport.authenticate('jwt', {session: false}), (req, res)
             .catch(err => res.json(err));
         })
         .catch(err => res.status(404).json({postnotfound: 'No post found'}));
+
+});
+
+// @route   POST api/posts/like/:id
+// @desc    Like post
+// @access  Private
+router.post('/like/:id', passport.authenticate('jwt', {session: false}), (req, res) => {
+  Post.findById(req.params.id)
+    .then(foundPost => {
+      // Check for post owner
+      if(foundPost.likes.filter(like => like.user.toString() === req.user.id).length > 0) {
+        return res.status(400).json({alreadyliked: 'User already liked this post'});
+      }
+
+      // Add user id to like array
+      foundPost.likes.unshift({user: req.user.id});
+
+      foundPost.save().then(foundPost => res.json(foundPost));
+        
+    })
+    .catch(err => res.status(404).json({postnotfound: 'No post found'}));
+
+});
+
+// @route   POST api/posts/unlike/:id
+// @desc    Unlike post
+// @access  Private
+router.post('/unlike/:id', passport.authenticate('jwt', {session: false}), (req, res) => {
+  Post.findById(req.params.id)
+    .then(foundPost => {
+      // Check for post owner
+      if(foundPost.likes.filter(like => like.user.toString() === req.user.id).length ===  0) {
+        return res.status(400).json({notliked: 'You have not yet liked this post'});
+      }
+
+      // Get remove index
+      const removeIndex = foundPost.likes
+        .map(item => item.user.toString()) // this map method returns elements with .user in the array, you could say item._id to return elements with _id
+        .indexOf(req.user.id);
+
+        //Splice out of array [Remove 1 element from index removeIndex]
+      foundPost.likes.splice(removeIndex, 1);
+
+      // Save
+      foundPost.save().then(foundPost => res.json({foundPost}));
+        
+    })
+    .catch(err => res.status(404).json({postnotfound: 'No post found'}));
 
 });
 
