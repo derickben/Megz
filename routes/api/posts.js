@@ -139,8 +139,8 @@ router.post('/like/:id', passport.authenticate('jwt', {session: false}), (req, r
   Post.findById(req.params.id)
     .then(foundPost => {
       // Check for post owner
-      if(foundPost.likes.filter(like => like.user.toString() === req.user.id).length > 0) {
-        return res.status(400).json({alreadyliked: 'User already liked this post'});
+      if(foundPost.likes.filter(like => like.user.toString() === req.user.id).length > 0) { //filter grabs likes.user id from the object array nd mks it a string
+        return res.status(400).json({alreadyliked: 'User already liked this post'});  //it then equates it to the logged in user id
       }
 
       // Add user id to like array
@@ -179,5 +179,62 @@ router.post('/unlike/:id', passport.authenticate('jwt', {session: false}), (req,
     .catch(err => res.status(404).json({postnotfound: 'No post found'}));
 
 });
+
+// @route   POST api/posts/comment/:id
+// @desc    Add comment to post
+// @access  Private
+router.post('/comment/:id', passport.authenticate('jwt', {session: false}), (req, res) => {
+  const {errors, isValid} = validatePostInput(req.body);
+
+  // Check Validation
+  if (!isValid) {
+    // Return any errors with 400 status
+    return res.status(400).json(errors);
+  }
+
+  Post.findById(req.params.id)
+    .then(foundPost => {
+      const newComment = {
+        user: req.user.id,
+        text: req.body.text,
+        name: req.body.name,
+        avatar: req.body.avatar
+      };
+      
+      // Add to comment Array
+      foundPost.comments.unshift(newComment);
+
+      // Save
+      //foundPost.save().then(foundPost => res.json(foundPost));
+    })
+    .catch(err => res.status(404).json({postnotfound: `No post found`}));
+});
+
+// @route   DELETE api/posts/comment/:id/:comment_id
+// @desc    Delete comment from post
+// @access  Private
+router.delete('/comment/:id/:comment_id', passport.authenticate('jwt', {session: false}), (req, res) => {
+  
+  Post.findById(req.params.id)
+    .then(foundPost => {
+      // Check to see if comment exist
+      if (foundPost.comments.filter(comment => comment._id.toString() === req.params.comment_id).length === 0) {
+        return res.status(404).json({commentnotexist: 'Comment does not exist'});
+      }
+
+      // Get remove index 
+      const removeIndex = foundPost.comments
+        .map(item => item._id.toString())
+        .indexOf(req.params.comment_id);
+
+        // Splice comment out of array
+        foundPost.comments.splice(removeIndex, 1);
+
+        // Save
+        foundPost.save().then(foundPosts => res.json(foundPost));
+    })
+    .catch(err => res.status(404).json({postnotfound: `No post found`}));
+});
+
 
 module.exports = router;
