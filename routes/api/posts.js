@@ -229,6 +229,7 @@ router.delete('/comment/:id/:comment_id', passport.authenticate('jwt', {session:
 
         // Splice comment out of array
         foundPost.comments.splice(removeIndex, 1);
+        console.log("");
 
         // Save
         foundPost.save().then(foundPosts => res.json(foundPost));
