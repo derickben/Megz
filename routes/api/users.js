@@ -1,4 +1,5 @@
 const express = require("express"),
+      { check, validationResult } = require('express-validator/check')
       gravatar = require('gravatar'),
       bcrypt = require('bcryptjs'),
       jwt = require('jsonwebtoken'),
@@ -15,13 +16,14 @@ const validateLoginInput = require('../../validation/login');
   //Load User Model
 const User = require('../../models/User');
 
+
 // @route   GET api/users/test
 // @desc    Tests users route
 // @access  Public
 router.get('/test', (req, res) => res.json({msg: "Users Works"}));
 
 // @route   POST api/users/register
-// @desc    REgister user
+// @desc    Register user
 // @access  Public
 router.post("/register", (req, res) => {
   const {errors, isValid} = validateRegisterInput(req.body);
@@ -79,11 +81,11 @@ router.post('/login', (req, res) => {
   const password = req.body.password;
 
     //Find user by email
-    User.findOne({email}, (err, foundUser) => {
+    User.findOne({ email }).then(foundUser => {
       //Check for User
       if (!foundUser) {
-        errors.email = 'User not found';
-        return res.status(404).json({errors});
+        errors.email = 'User NOT found';
+        return res.status(404).json(errors);
       }
 
       // Check Password
